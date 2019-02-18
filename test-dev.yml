@@ -1,0 +1,137 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Stand up an Amazon Linux 2 instance for testing purposes
+
+Parameters:
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default : 
+
+  PrivateSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  PrivateSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  PublicSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  PublicSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
+      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
+      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
+      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+
+  ELBV2Name:
+    Type: String
+    Default: test-alb
+
+  ELBV2SGName:
+    Type: String
+    Default: test-elbv2-sg
+
+  EC2Name:
+    Type: String
+    Default: test-ec2
+
+  EC2SGName:
+    Type: String
+    Default: test-ec2-sg
+
+  # Amazon Linux 2
+  EC2AMI:
+    Type: String
+    Default: ami-0e6d2e8684d4ccb3e
+
+  EC2KeyName:
+    Type: String
+    Default: 
+  
+  CBCidrIp:
+    Type: String
+    Default: 
+
+
+
+Resources:
+
+  EC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref PrivateSubnetId1
+      ImageId: !Ref EC2AMI
+      Tags:
+        - Key: Name
+          Value: !Ref EC2Name
+      SecurityGroupIds:
+        - !Ref EC2SG
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref EC2KeyName
+
+
+  EC2SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Ref EC2SGName
+      GroupDescription: !Join
+                          - ' '
+                          - - This sg is for ec2 instance
+                            - !Ref EC2Name
+      Tags:
+        - Key: Name
+          Value: !Ref EC2SGName
+      # This is for SSH port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref CBCidrIp
+
+  # ELBV2SG:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     VpcId: !Ref VpcId
+  #     GroupName: !Ref ELBV2SGName
+  #     GroupDescription: !Join
+  #                         - ' '
+  #                         - - This sg is for load balancer
+  #                           - !Ref ELBV2Name
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Ref ELBV2SGName
+  #     # This is for SSH port 22
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 22
+  #         ToPort: 22
+  #         CidrIp: !Ref CBCidrIp
+
+  # ELBV2:
+  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  #   Properties:
+  #     Name: !Ref ELBV2Name
+  #     Scheme: internet-facing
+  #     Subnets:
+  #       - !Ref PrivateSubnetId1
+  #       - !Ref PrivateSubnetId2      
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Ref ELBV2Name
+  #     SecurityGroups: 
+  #       - !Ref ELBV2SG

@@ -1,0 +1,106 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Stand up an Ubuntu instance mainly for automation.
+
+Parameters:
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default : 
+
+  PrivateSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  PrivateSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  PublicSubnetId1:
+    Type: AWS::EC2::Subnet::Id
+    Default:
+
+  PublicSubnetId2:
+    Type: AWS::EC2::Subnet::Id
+    Default:
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
+      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
+      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
+      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+
+  EC2Name:
+    Type: String
+    Default: ubuntu
+
+  EC2SGName:
+    Type: String
+    Default: ubuntu-sg
+
+  # Ubuntu Server 18.04 LTS
+  EC2AMI:
+    Type: String
+    Default: ami-0ac019f4fcb7cb7e6
+
+  EC2KeyName:
+    Type: String
+    Default:
+
+  CBCidrIp:
+    Type: String
+    Default: 
+
+
+
+Resources:
+
+  EC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref PrivateSubnetId2
+      ImageId: !Ref EC2AMI
+      Tags:
+        - Key: Name
+          Value: !Ref EC2Name
+      SecurityGroupIds:
+        - !Ref EC2SG
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref EC2KeyName
+
+
+  EC2SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupName: !Ref EC2SGName
+      GroupDescription: !Join
+                          - ' '
+                          - - This sg is for ec2 instance
+                            - !Ref EC2Name
+      Tags:
+        - Key: Name
+          Value: !Ref EC2SGName
+      SecurityGroupIngress:
+        # This is for SSH port 22
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref CBCidrIp
+        # This is for HTTP port 80
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref CBCidrIp
+        # This is for HTTPS port 443
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref CBCidrIp
